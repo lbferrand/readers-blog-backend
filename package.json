@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "type": "module",
-  "proxy": "http://127.0.0.1:5000/",
   "scripts": {
-    "start": "./node_modules/.bin/concurrently \"./node_modules/.bin/nodemon\" \"npm run client\"",
+    "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "firebase-admin": "^11.9.0",
     "mongodb": "^5.6.0"

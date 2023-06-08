@@ -1,7 +1,13 @@
 import fs from "fs";
+import path from "path";
 import admin from "firebase-admin";
 import express from "express";
+import "dotenv/config";
 import { db, connectToDb } from "./db.js";
+
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const credentials = JSON.parse(fs.readFileSync("./credentials.json"));
 admin.initializeApp({
@@ -10,6 +16,11 @@ admin.initializeApp({
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../build")));
+
+app.get(/^(?!\/api).+/, (req, res) => {
+  res.sendFile(path.join(__dirname, "../build/index.html"));
+});
 
 app.use(async (req, res, next) => {
   const { authtoken } = req.headers;
@@ -50,16 +61,6 @@ app.use((req, res, next) => {
   }
 });
 
-// app.post('/hello', (req, res) => {
-//     console.log(req.body)
-//     res.send(`Hello ${req.body.name}!`);
-// });
-
-// app.get('/hello/:name', (req, res) => {
-//     const { name } = req.params;
-//     res.send(`Hello ${name}!!`);
-// })
-
 app.put("/api/articles/:name/upvote", async (req, res) => {
   const { name } = req.params;
   const { uid } = req.user;
@@ -81,7 +82,6 @@ app.put("/api/articles/:name/upvote", async (req, res) => {
     }
 
     const updatedArticle = await db.collection("articles").findOne({ name });
-
     res.json(updatedArticle);
   } else {
     res.send("That article doesn't exist");
@@ -93,9 +93,12 @@ app.post("/api/articles/:name/comments", async (req, res) => {
   const { text } = req.body;
   const { email } = req.user;
 
-  await db
-    .collection("articles")
-    .updateOne({ name }, { $push: { comments: { postedBy: email, text } } });
+  await db.collection("articles").updateOne(
+    { name },
+    {
+      $push: { comments: { postedBy: email, text } },
+    }
+  );
   const article = await db.collection("articles").findOne({ name });
 
   if (article) {
@@ -105,9 +108,11 @@ app.post("/api/articles/:name/comments", async (req, res) => {
   }
 });
 
+const PORT = process.env.PORT || 5000;
+
 connectToDb(() => {
   console.log("Successfully connected to database!");
-  app.listen(5000, () => {
-    console.log("Server is listening on port 5000");
+  app.listen(PORT, () => {
+    console.log("Server is listening on port " + PORT);
   });
 });
